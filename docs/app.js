@@ -183,6 +183,57 @@ function renderCompare(data) {
   }
 }
 
+/* ---------- PSU expected grant ---------- */
+const PSU_BASE = { cl12: 200, cl34: 300 };
+
+function psuMultiplier(pct) {
+  if (pct >= 100) return 2.0;
+  if (pct >= 80)  return 1.7;
+  if (pct >= 60)  return 1.3;
+  if (pct >= 40)  return 1.0;
+  if (pct >= 20)  return 0.5;
+  return 0;
+}
+
+function renderPsu(data) {
+  // reuse the same diff basis as the comparison: latest vs pinned vwap_mean
+  let latest = null;
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (data[i].vwap_mean != null) { latest = data[i]; break; }
+  }
+  const pinned = data.find(d => d.date === PINNED_DATE && d.vwap_mean != null) || null;
+
+  const elDiff  = document.querySelector('[data-field="psu_diff"]');
+  const elMult  = document.querySelector('[data-field="psu_mult"]');
+  const elClose = document.querySelector('[data-field="psu_close"]');
+  const el12Stk = document.querySelector('[data-field="psu_cl12_stocks"]');
+  const el12Ev  = document.querySelector('[data-field="psu_cl12_eval"]');
+  const el34Stk = document.querySelector('[data-field="psu_cl34_stocks"]');
+  const el34Ev  = document.querySelector('[data-field="psu_cl34_eval"]');
+
+  if (!latest || !pinned) {
+    [elDiff, elMult, elClose, el12Stk, el12Ev, el34Stk, el34Ev]
+      .forEach(el => { if (el) el.textContent = "—"; });
+    return;
+  }
+
+  const pct   = (latest.vwap_mean - pinned.vwap_mean) / pinned.vwap_mean * 100;
+  const mult  = psuMultiplier(pct);
+  const close = latest.close ?? 0;
+  const sign  = pct >= 0 ? "+" : "";
+
+  if (elDiff)  elDiff.textContent  = sign + pct.toFixed(2) + "%";
+  if (elMult)  elMult.textContent  = "×" + mult.toFixed(1);
+  if (elClose) elClose.textContent = fmtKRW.format(close);
+
+  const stk12 = Math.round(PSU_BASE.cl12 * mult);
+  const stk34 = Math.round(PSU_BASE.cl34 * mult);
+  if (el12Stk) el12Stk.textContent = stk12 + " stocks";
+  if (el12Ev)  el12Ev.textContent  = "₩" + fmtKRW.format(stk12 * close);
+  if (el34Stk) el34Stk.textContent = stk34 + " stocks";
+  if (el34Ev)  el34Ev.textContent  = "₩" + fmtKRW.format(stk34 * close);
+}
+
 /* ---------- chart ---------- */
 let chart;
 function renderChart(data) {
@@ -365,6 +416,7 @@ async function init() {
     if (!data.length) throw new Error("no rows returned");
     renderStats(data);
     renderCompare(data);
+    renderPsu(data);
     renderChart(data);
     status.textContent = "";
   } catch (err) {

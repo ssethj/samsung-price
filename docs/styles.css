@@ -164,6 +164,72 @@ body {
 .compare__value.is-up   { color: #16a34a; }
 .compare__value.is-down { color: var(--accent); }
 
+/* ---------- PSU expected grant ---------- */
+.psu {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+.psu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.6rem;
+}
+.psu__title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+.psu__badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+}
+.psu__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.psu__card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.7rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.psu__card-head {
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--line);
+}
+.psu__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+.psu__row span:first-child { color: var(--ink-soft); }
+.psu__stocks, .psu__eval { font-weight: 700; }
+.psu__note {
+  margin: 0.6rem 0 0;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
 /* ---------- Chart ---------- */
 .chart-card {
   background: var(--card);
@@ -216,4 +282,5 @@ body {
   .stats { grid-template-columns: 1fr; }
   .chart { height: 420px; }
   .compare__cell--change { margin-left: 0; align-items: flex-start; text-align: left; }
+  .psu__grid { grid-template-columns: 1fr; }
 }
