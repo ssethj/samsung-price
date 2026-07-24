@@ -44,15 +44,31 @@ jobs:
             --end "$END"
 
       - name: Commit and push changes
+        id: commit
         run: |
           END=$(date -u +%Y-%m-%d)
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/
+          git add data/
           if git diff --cached --quiet; then
             echo "No changes to commit for $END."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "Update 005930.KS prices and VWAPs ($END)"
+            git commit -m "Update 005930.KS prices, VWAPs and PSU ($END)"
             git push
             echo "Pushed updates for $END."
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Posts the latest PSU evaluation (mirrors the "PSU Expected Grant"
+      # section of docs/index.html) as a comment on Discussion #1. Requires a
+      # PAT secret named DISCUSSIONS_TOKEN (classic PAT: `repo` scope; or a
+      # fine-grained token with Discussions read+write on this repo) — the
+      # default GITHUB_TOKEN cannot write discussions. Skipped on no-op runs
+      # (nothing new to report) and when the secret is absent.
+      - name: Post PSU evaluation to Discussion #1
+        if: steps.commit.outputs.pushed == 'true'
+        env:
+          DISCUSSIONS_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN }}
+        run: |
+          python3 scripts/post_psu_discussion.py
