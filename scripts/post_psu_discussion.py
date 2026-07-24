@@ -7,11 +7,19 @@ written by fetch_prices.py) and posts a markdown summary — mirroring the
 renderCompare in app.js) — as a new comment on GitHub Discussion #1.
 
 Authentication uses a personal access token exposed via the DISCUSSIONS_TOKEN
-environment variable (a repo secret). The default GITHUB_TOKEN cannot reliably
-write to discussions, so a PAT is required. The token needs:
+environment variable (a repo secret, or a short-lived installation token
+minted by actions/create-github-app-token in the workflow). The default
+GITHUB_TOKEN cannot reliably write to discussions, so a PAT or a GitHub App
+installation token is required. The token needs one of:
   - classic PAT: `repo` scope (covers discussions read + write), or
   - fine-grained PAT: "Discussions" account permission (read + write) on this
-    repository.
+    repository, or
+  - GitHub App installation access token: the app must have the "Discussions"
+    permission set to Read & write and be installed on this repository. The
+    workflow mints this token via actions/create-github-app-token, so the
+    comment is authored by the app bot (<app-slug>[bot]) — a separate identity
+    from the repo owner, which is what triggers a notification (GitHub never
+    notifies a user about their own comments).
 
 When DISCUSSIONS_TOKEN is unset the script is a no-op (exit 0, prints a
 notice) so the price-update pipeline keeps working before the secret is
