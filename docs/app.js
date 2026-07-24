@@ -1,8 +1,13 @@
 "use strict";
 /* Samsung Electronics (005930.KS) price & VWAP dashboard.
  *
- * Fetches the two committed CSVs from the jsDelivr CDN (see repo README) so the
- * page reflects the latest daily GitHub-Actions run without being rebuilt.
+ * Fetches the three committed CSVs from the jsDelivr CDN (see repo README) so
+ * the page reflects the latest daily GitHub-Actions run without being rebuilt:
+ *   - prices CSV ......... daily OHLCV (close, volume)
+ *   - vwap CSV ........... trailing 7D/1M/2M VWAPs + VWAP mean per day
+ *   - psu CSV ............ precomputed PSU grant evaluation per day
+ *        (diff_ratio, multiplier, cl1/cl2 & cl3/cl4 stocks + evaluation),
+ *        so the PSU panel below just reads values instead of recomputing them.
  * Renders an ECharts chart mixing:
  *   - trading volume ........ bar    (right axis, shares)
  *   - closing price ......... points (left axis, KRW)
@@ -13,6 +18,7 @@
 const DATA = {
   prices: "https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_prices.csv",
   vwap:   "https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_vwap.csv",
+  psu:    "https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_psu.csv",
 };
 
 // Reference date for the VWAP-mean comparison shown on the page.
@@ -92,9 +98,17 @@ async function loadVwap() {
   if (!res.ok) throw new Error(`vwap HTTP ${res.status}`);
   return toObjects(parseCSV(await res.text()));
 }
+async function loadPsu() {
+  const res = await fetch(DATA.psu, { cache: "no-store" });
+  if (!res.ok) throw new Error(`psu HTTP ${res.status}`);
+  return toObjects(parseCSV(await res.text()));
+}
 
 async function loadData() {
   const [prices, vwap] = await Promise.all([loadPrices(), loadVwap()]);
+  // PSU CSV is optional: if it isn't published yet (or fails to load), the PSU
+  // panel just shows placeholders rather than breaking the whole dashboard.
+  const psu = await loadPsu().catch(() => []);
 
   // index vwap rows by as_of for an O(n) join
   const vmap = new Map();
@@ -118,7 +132,7 @@ async function loadData() {
       vwap_as_of: v ? v.as_of : null,
     };
   });
-  return merged;
+  return { merged, psu };
 }
 
 /* ---------- stat cards ---------- */
@@ -183,26 +197,13 @@ function renderCompare(data) {
   }
 }
 
-/* ---------- PSU expected grant ---------- */
-const PSU_BASE = { cl12: 200, cl34: 300 };
-
-function psuMultiplier(pct) {
-  if (pct >= 100) return 2.0;
-  if (pct >= 80)  return 1.7;
-  if (pct >= 60)  return 1.3;
-  if (pct >= 40)  return 1.0;
-  if (pct >= 20)  return 0.5;
-  return 0;
-}
-
-function renderPsu(data) {
-  // reuse the same diff basis as the comparison: latest vs pinned vwap_mean
-  let latest = null;
-  for (let i = data.length - 1; i >= 0; i--) {
-    if (data[i].vwap_mean != null) { latest = data[i]; break; }
-  }
-  const pinned = data.find(d => d.date === PINNED_DATE && d.vwap_mean != null) || null;
-
+/* ---------- PSU expected grant ----------
+ * Values are read straight from the precomputed PSU CSV (one row per trading
+ * day, latest = last row): diff_ratio, multiplier, cl1/cl2 & cl3/cl4 expected
+ * stocks and their evaluation at that day's close. No client-side math — the
+ * script (fetch_prices.py) owns the tier/multiplier logic and writes the file.
+ */
+function renderPsu(psu) {
   const elDiff  = document.querySelector('[data-field="psu_diff"]');
   const elMult  = document.querySelector('[data-field="psu_mult"]');
   const elClose = document.querySelector('[data-field="psu_close"]');
@@ -211,27 +212,28 @@ function renderPsu(data) {
   const el34Stk = document.querySelector('[data-field="psu_cl34_stocks"]');
   const el34Ev  = document.querySelector('[data-field="psu_cl34_eval"]');
 
-  if (!latest || !pinned) {
+  if (!psu || !psu.length) {
     [elDiff, elMult, elClose, el12Stk, el12Ev, el34Stk, el34Ev]
       .forEach(el => { if (el) el.textContent = "—"; });
     return;
   }
 
-  const pct   = (latest.vwap_mean - pinned.vwap_mean) / pinned.vwap_mean * 100;
-  const mult  = psuMultiplier(pct);
-  const close = latest.close ?? 0;
-  const sign  = pct >= 0 ? "+" : "";
+  const row    = psu[psu.length - 1];
+  const diff   = num(row.diff_ratio);
+  const mult   = num(row.multiplier);
+  const close  = num(row.close);
+  const stk12  = num(row.cl12_stocks);
+  const ev12   = num(row.cl12_eval);
+  const stk34  = num(row.cl34_stocks);
+  const ev34   = num(row.cl34_eval);
 
-  if (elDiff)  elDiff.textContent  = sign + pct.toFixed(2) + "%";
-  if (elMult)  elMult.textContent  = "×" + mult.toFixed(1);
-  if (elClose) elClose.textContent = fmtKRW.format(close);
-
-  const stk12 = Math.round(PSU_BASE.cl12 * mult);
-  const stk34 = Math.round(PSU_BASE.cl34 * mult);
-  if (el12Stk) el12Stk.textContent = stk12 + " stocks";
-  if (el12Ev)  el12Ev.textContent  = "₩" + fmtKRW.format(stk12 * close);
-  if (el34Stk) el34Stk.textContent = stk34 + " stocks";
-  if (el34Ev)  el34Ev.textContent  = "₩" + fmtKRW.format(stk34 * close);
+  if (elDiff)  elDiff.textContent  = diff != null ? (diff >= 0 ? "+" : "") + diff.toFixed(2) + "%" : "—";
+  if (elMult)  elMult.textContent  = mult != null ? "×" + mult.toFixed(1) : "—";
+  if (elClose) elClose.textContent = close != null ? fmtKRW.format(close) : "—";
+  if (el12Stk) el12Stk.textContent = stk12 != null ? stk12 + " stocks" : "—";
+  if (el12Ev)  el12Ev.textContent  = ev12 != null ? "₩" + fmtKRW.format(ev12) : "—";
+  if (el34Stk) el34Stk.textContent = stk34 != null ? stk34 + " stocks" : "—";
+  if (el34Ev)  el34Ev.textContent  = ev34 != null ? "₩" + fmtKRW.format(ev34) : "—";
 }
 
 /* ---------- chart ---------- */
@@ -412,11 +414,11 @@ async function init() {
   const status = document.getElementById("status");
   try {
     status.textContent = "Loading market data…";
-    const data = await loadData();
+    const { merged: data, psu } = await loadData();
     if (!data.length) throw new Error("no rows returned");
     renderStats(data);
     renderCompare(data);
-    renderPsu(data);
+    renderPsu(psu);
     renderChart(data);
     status.textContent = "";
   } catch (err) {
