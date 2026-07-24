@@ -6,23 +6,23 @@ via GitHub Actions.
 
 ## Data files
 
-Both CSVs are committed under [`docs/`](docs/) and served over the jsDelivr CDN,
+Both CSVs are committed under [`data/`](data/) and served over the jsDelivr CDN,
 so you can fetch them directly without cloning the repo.
 
-### Prices — `docs/005930_kospi_prices.csv`
+### Prices — `data/005930_kospi_prices.csv`
 
 One row per trading day. Columns: `date, close, volume, adjclose, symbol, market`.
 
-- Raw (GitHub): <https://github.com/tindone/samsung-price/blob/main/docs/005930_kospi_prices.csv>
-- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/docs/005930_kospi_prices.csv>
+- Raw (GitHub): <https://github.com/tindone/samsung-price/blob/main/data/005930_kospi_prices.csv>
+- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_prices.csv>
 
-### VWAP — `docs/005930_kospi_vwap.csv`
+### VWAP — `data/005930_kospi_vwap.csv`
 
 Trailing calendar-window VWAPs computed for every trading day. Columns:
 `as_of, vwap_7d, days_7d, vwap_1m, days_1m, vwap_2m, days_2m, vwap_mean`.
 
-- Raw (GitHub): <https://github.com/tindone/samsung-price/blob/main/docs/005930_kospi_vwap.csv>
-- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/docs/005930_kospi_vwap.csv>
+- Raw (GitHub): <https://github.com/tindone/samsung-price/blob/main/data/005930_kospi_vwap.csv>
+- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_vwap.csv>
 
 > jsDelivr caches aggressively; point at a specific commit (`@<sha>` instead of
 > `@main`) if you need a pinned, instantly-refreshing snapshot.
