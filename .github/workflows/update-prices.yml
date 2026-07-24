@@ -77,14 +77,27 @@ jobs:
           fi
 
       # Posts the latest PSU evaluation (mirrors the "PSU Expected Grant"
-      # section of docs/index.html) as a comment on Discussion #1. Requires a
-      # PAT secret named DISCUSSIONS_TOKEN (classic PAT: `repo` scope; or a
-      # fine-grained token with Discussions read+write on this repo) — the
-      # default GITHUB_TOKEN cannot write discussions. Skipped on no-op runs
-      # (nothing new to report) and when the secret is absent.
+      # section of docs/index.html) as a comment on Discussion #1. The comment
+      # is authored by a GitHub App bot — a distinct identity from the repo
+      # owner — because GitHub never notifies a user about their own comments,
+      # so a PAT owned by the repo owner would be silent. Requires a GitHub App
+      # installed on this repository with the "Discussions" permission set to
+      # Read & write, plus two repository secrets: BOT_APP_ID (the app's
+      # numeric ID) and BOT_APP_PRIVATE_KEY (the app's PEM private key).
+      # actions/create-github-app-token mints a short-lived installation access
+      # token that post_psu_discussion.py consumes via DISCUSSIONS_TOKEN exactly
+      # like a PAT. Skipped on no-op runs (nothing new to report).
+      - name: Get bot installation token
+        id: bot-token
+        if: steps.commit.outputs.pushed == 'true'
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Post PSU evaluation to Discussion #1
         if: steps.commit.outputs.pushed == 'true'
         env:
-          DISCUSSIONS_TOKEN: ${{ secrets.DISCUSSIONS_TOKEN }}
+          DISCUSSIONS_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           python3 scripts/post_psu_discussion.py
