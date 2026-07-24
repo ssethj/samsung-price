@@ -17,58 +17,28 @@
   </header>
 
   <main class="dashboard">
-    <section class="stats" id="stats" aria-label="Latest values">
-      <div class="stat" data-key="close">
-        <span class="stat__label">Close</span>
-        <span class="stat__value" data-field="close">—</span>
-        <span class="stat__date" data-field="as_of">—</span>
-      </div>
-      <div class="stat stat--accent" data-key="mean">
-        <span class="stat__label">VWAP Mean</span>
-        <span class="stat__value" data-field="vwap_mean">—</span>
-        <span class="stat__date" data-field="mean_date">—</span>
-      </div>
-      <div class="stat" data-key="vwap_7d">
-        <span class="stat__label">VWAP 7D</span>
-        <span class="stat__value" data-field="vwap_7d">—</span>
-        <span class="stat__meta" data-field="days_7d">— days</span>
-      </div>
-      <div class="stat" data-key="vwap_1m">
-        <span class="stat__label">VWAP 1M</span>
-        <span class="stat__value" data-field="vwap_1m">—</span>
-        <span class="stat__meta" data-field="days_1m">— days</span>
-      </div>
-      <div class="stat" data-key="vwap_2m">
-        <span class="stat__label">VWAP 2M</span>
-        <span class="stat__value" data-field="vwap_2m">—</span>
-        <span class="stat__meta" data-field="days_2m">— days</span>
-      </div>
-    </section>
-
-    <section class="compare" aria-label="VWAP mean comparison">
-      <div class="compare__head">VWAP Mean comparison</div>
-      <div class="compare__cells">
-        <div class="compare__cell">
-          <span class="compare__label">2025-10-13</span>
-          <span class="compare__value" data-field="cmp_pinned_mean">—</span>
-        </div>
-        <span class="compare__arrow" aria-hidden="true">→</span>
-        <div class="compare__cell">
-          <span class="compare__label">Latest · <span data-field="cmp_latest_date">—</span></span>
-          <span class="compare__value" data-field="cmp_latest_mean">—</span>
-        </div>
-        <div class="compare__cell compare__cell--change">
-          <span class="compare__label">Difference</span>
-          <span class="compare__value" data-field="cmp_change">—</span>
-        </div>
-      </div>
-    </section>
-
     <section class="psu" aria-label="PSU expected grant">
       <div class="psu__head">
         <span class="psu__title">PSU Expected Grant</span>
         <span class="psu__badge">Diff <span data-field="psu_diff">—</span> · Multiplier <span data-field="psu_mult">—</span></span>
       </div>
+
+      <div class="psu__vwap">
+        <div class="psu__vwap-cell">
+          <span class="psu__vwap-label">Pinned · <span data-field="cmp_pinned_date">2025-10-13</span></span>
+          <span class="psu__vwap-value" data-field="cmp_pinned_mean">—</span>
+        </div>
+        <span class="psu__vwap-arrow" aria-hidden="true">→</span>
+        <div class="psu__vwap-cell">
+          <span class="psu__vwap-label">Latest · <span data-field="cmp_latest_date">—</span></span>
+          <span class="psu__vwap-value" data-field="cmp_latest_mean">—</span>
+        </div>
+        <div class="psu__vwap-cell psu__vwap-cell--change">
+          <span class="psu__vwap-label">Difference</span>
+          <span class="psu__vwap-value" data-field="cmp_change">—</span>
+        </div>
+      </div>
+
       <div class="psu__grid">
         <div class="psu__card">
           <div class="psu__card-head">CL1 / CL2</div>
