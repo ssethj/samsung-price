@@ -29,13 +29,30 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Determine effective date
+        run: |
+          # The scheduled run fires at 9:00 PM KST (12:00 UTC), after the
+          # Korean market has closed and Yahoo has published the day's
+          # closing prices. A manual workflow_dispatch fired earlier in the
+          # day would find today's close not yet available, so before the
+          # 9 PM KST threshold we treat the run as belonging to the
+          # previous day instead.
+          if [ "$(date -u +%H%M)" -lt 1200 ]; then
+            END=$(date -u -d "yesterday" +%Y-%m-%d)
+          else
+            END=$(date -u +%Y-%m-%d)
+          fi
+          # Rolling 30-day window. The script merges new rows into the
+          # existing CSV (deduplicated by date), so missed/failed runs catch
+          # up on their own and VWAPs are computed from the full accumulated
+          # history.
+          START=$(date -u -d "$END -30 days" +%Y-%m-%d)
+          echo "END=$END"   >> "$GITHUB_ENV"
+          echo "START=$START" >> "$GITHUB_ENV"
+          echo "Effective date range: $START .. $END"
+
       - name: Fetch latest prices and compute VWAPs
         run: |
-          # Rolling 30-day window. The script merges new rows into the existing
-          # CSV (deduplicated by date), so missed/failed runs catch up on their
-          # own and VWAPs are computed from the full accumulated history.
-          START=$(date -u -d "30 days ago" +%Y-%m-%d)
-          END=$(date -u +%Y-%m-%d)
           echo "Fetching 005930.KS from $START to $END"
           python3 scripts/fetch_prices.py \
             --ticker 005930 \
@@ -46,7 +63,6 @@ jobs:
       - name: Commit and push changes
         id: commit
         run: |
-          END=$(date -u +%Y-%m-%d)
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/
