@@ -1,0 +1,58 @@
+name: Update Samsung prices
+
+# Runs every weekday at 9:00 PM KST (UTC+9) = 12:00 UTC, Mon–Fri.
+# Also runnable on demand from the Actions tab.
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'
+  workflow_dispatch:
+
+# The auto-commit step pushes back to the repo, so the default
+# GITHUB_TOKEN needs write access to contents.
+permissions:
+  contents: write
+
+# Avoid overlapping runs if a manual trigger collides with the schedule.
+concurrency:
+  group: update-samsung-prices
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Fetch latest prices and compute VWAPs
+        run: |
+          # Rolling 30-day window. The script merges new rows into the existing
+          # CSV (deduplicated by date), so missed/failed runs catch up on their
+          # own and VWAPs are computed from the full accumulated history.
+          START=$(date -u -d "30 days ago" +%Y-%m-%d)
+          END=$(date -u +%Y-%m-%d)
+          echo "Fetching 005930.KS from $START to $END"
+          python3 scripts/fetch_prices.py \
+            --ticker 005930 \
+            --market kospi \
+            --start "$START" \
+            --end "$END"
+
+      - name: Commit and push changes
+        run: |
+          END=$(date -u +%Y-%m-%d)
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          if git diff --cached --quiet; then
+            echo "No changes to commit for $END."
+          else
+            git commit -m "Update 005930.KS prices and VWAPs ($END)"
+            git push
+            echo "Pushed updates for $END."
+          fi
