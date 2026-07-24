@@ -36,3 +36,14 @@ Trailing calendar-window VWAPs computed for every trading day. Columns:
 - [`.github/workflows/update-prices.yml`](.github/workflows/update-prices.yml)
   runs the script on a daily schedule and commits the updated CSVs back to this
   branch.
+
+## Buy me a coffee
+
+If you find this useful, consider buying me a coffee — every cup helps keep the
+data flowing.
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/lungo" target="_blank">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="52" />
+  </a>
+</p>
