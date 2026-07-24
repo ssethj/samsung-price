@@ -115,6 +115,55 @@ body {
   color: var(--ink-soft);
 }
 
+/* ---------- VWAP mean comparison ---------- */
+.compare {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+}
+.compare__head {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+.compare__cells {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.compare__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.compare__label {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.compare__value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.compare__arrow {
+  font-size: 1.4rem;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+.compare__cell--change {
+  margin-left: auto;
+  align-items: flex-end;
+  text-align: right;
+}
+.compare__value.is-up   { color: #16a34a; }
+.compare__value.is-down { color: var(--accent); }
+
 /* ---------- Chart ---------- */
 .chart-card {
   background: var(--card);
@@ -151,4 +200,5 @@ body {
 @media (max-width: 480px) {
   .stats { grid-template-columns: 1fr; }
   .chart { height: 420px; }
+  .compare__cell--change { margin-left: 0; align-items: flex-start; text-align: left; }
 }
