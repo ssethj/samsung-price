@@ -20,12 +20,13 @@ Re-running with a new/overlapping range merges new rows into the existing file
 
 After each run the script also computes three volume-weighted average prices
 (VWAP = sum(close * volume) / sum(volume)) from the accumulated data, using
-CALENDAR-day windows anchored at the most recent trading day in the dataset
-(not business days; only trading days that fall inside each window count):
+CALENDAR-day windows (not business days; only trading days that fall inside each
+window count). VWAPs are computed for EVERY trading day in the dataset, each
+anchored at that day (trailing window ending on it):
     7-day    : trailing 7 calendar days   [ref-6d .. ref]
     1-month  : trailing 1 calendar month  [ref-1mo .. ref]
     2-month  : trailing 2 calendar months [ref-2mo .. ref]
-These are appended (one row per run day) to:
+These are written (one row per trading day) to:
     docs/<TICKER>_<MARKET>_vwap.csv
         columns: as_of, vwap_7d, days_7d, vwap_1m, days_1m, vwap_2m, days_2m,
                  vwap_mean
@@ -214,10 +215,11 @@ def compute_vwap(rows: list[dict], window_start: datetime, ref_date: datetime) -
 
 
 def compute_vwaps(sorted_rows: list[dict], ref_date: datetime) -> dict:
-    """Compute the 7-day / 1-month / 2-month calendar-window VWAPs.
+    """Compute the 7-day / 1-month / 2-month calendar-window VWAPs for a single
+    anchor day.
 
-    Window definitions (calendar days, anchored at ref_date = most recent
-    trading day in the dataset):
+    Window definitions (calendar days, anchored at ref_date = the trading day
+    whose VWAP we want):
         7-day    : [ref_date - 6 days, ref_date]   (7 calendar days)
         1-month  : [ref_date - 1 calendar month, ref_date]
         2-month  : [ref_date - 2 calendar months, ref_date]
@@ -248,15 +250,27 @@ def compute_vwaps(sorted_rows: list[dict], ref_date: datetime) -> dict:
     }
 
 
-def write_vwap_summary(path: str, summary: dict) -> None:
-    """Append/overwrite the VWAP row for summary['as_of'] into the per-symbol
-    VWAP CSV (deduplicated by as_of date, newest wins)."""
+def load_existing_as_of(path: str) -> set[str]:
+    """Read just the set of as_of dates already present in the VWAP CSV.
+    Used to skip days that were already computed in a previous run.
+    """
+    if not os.path.exists(path):
+        return set()
+    with open(path, newline="", encoding="utf-8") as f:
+        return {row["as_of"] for row in csv.DictReader(f)}
+
+
+def write_vwap_summaries(path: str, summaries: list[dict]) -> None:
+    """Merge VWAP rows (one per trading day) into the per-symbol VWAP CSV,
+    deduplicated by as_of date (newest input wins), sorted chronologically.
+    """
     existing: dict[str, dict] = {}
     if os.path.exists(path):
         with open(path, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
                 existing[row["as_of"]] = row
-    existing[summary["as_of"]] = summary
+    for summary in summaries:
+        existing[summary["as_of"]] = summary
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=VWAP_FIELDS)
@@ -300,20 +314,33 @@ def main() -> None:
     print(f"{out_path}: {changed} row(s) added/updated, "
           f"{len(existing)} total row(s) now stored")
 
-    # VWAPs are computed from the full accumulated dataset, anchored at the
-    # most recent trading day available (not the requested --end).
+    # VWAPs are computed only for trading days present in the price data but
+    # NOT yet in the VWAP CSV (incremental). This skips days already computed
+    # in a previous run, while still allowing newly fetched historical days to
+    # be filled in. Each computed day d uses trailing-window data on or before
+    # d (compute_vwap filters rows to [window_start, d]).
     sorted_rows = [existing[d] for d in sorted(existing)]
-    ref_date = datetime.strptime(max(existing), "%Y-%m-%d")
-    vwap_summary = compute_vwaps(sorted_rows, ref_date)
     vwap_path = os.path.join(args.docs_dir, f"{args.ticker}_{args.market}_vwap.csv")
-    write_vwap_summary(vwap_path, vwap_summary)
+    existing_as_of = load_existing_as_of(vwap_path)
+    needed = [d for d in sorted(existing) if d not in existing_as_of]
 
-    print(f"VWAP as of {vwap_summary['as_of']} (calendar-day windows):")
-    print(f"  7-day   : {vwap_summary['vwap_7d']!s:>12}  ({vwap_summary['days_7d']} trading days)")
-    print(f"  1-month : {vwap_summary['vwap_1m']!s:>12}  ({vwap_summary['days_1m']} trading days)")
-    print(f"  2-month : {vwap_summary['vwap_2m']!s:>12}  ({vwap_summary['days_2m']} trading days)")
-    print(f"  mean    : {vwap_summary['vwap_mean']!s:>12}")
-    print(f"{vwap_path}: VWAP summary updated")
+    if needed:
+        summaries: list[dict] = []
+        for d in needed:
+            ref_date = datetime.strptime(d, "%Y-%m-%d")
+            summaries.append(compute_vwaps(sorted_rows, ref_date))
+        write_vwap_summaries(vwap_path, summaries)
+        latest = summaries[-1]
+        print(f"VWAPs computed for {len(summaries)} new day(s) "
+              f"({summaries[0]['as_of']} .. {latest['as_of']}); latest:")
+        print(f"  7-day   : {latest['vwap_7d']!s:>12}  ({latest['days_7d']} trading days)")
+        print(f"  1-month : {latest['vwap_1m']!s:>12}  ({latest['days_1m']} trading days)")
+        print(f"  2-month : {latest['vwap_2m']!s:>12}  ({latest['days_2m']} trading days)")
+        print(f"  mean    : {latest['vwap_mean']!s:>12}")
+        print(f"{vwap_path}: VWAP summary updated")
+    else:
+        print(f"No new VWAP rows to compute "
+              f"({len(existing_as_of)} day(s) already present in {vwap_path})")
 
 
 if __name__ == "__main__":
