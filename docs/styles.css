@@ -77,93 +77,6 @@ body {
   padding: 1.25rem 1.5rem 0.5rem;
 }
 
-/* ---------- Stat cards ---------- */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-.stat {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 0.8rem 0.95rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  border-left: 3px solid var(--c-v7);
-}
-.stat[data-key="close"]   { border-left-color: var(--c-close); }
-.stat[data-key="mean"]    { border-left-color: var(--c-mean); }
-.stat[data-key="vwap_7d"] { border-left-color: var(--c-v7); }
-.stat[data-key="vwap_1m"] { border-left-color: var(--c-v1); }
-.stat[data-key="vwap_2m"] { border-left-color: var(--c-v2); }
-.stat__label {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink-soft);
-}
-.stat__value {
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.15;
-}
-.stat__date, .stat__meta {
-  font-size: 0.75rem;
-  color: var(--ink-soft);
-}
-
-/* ---------- VWAP mean comparison ---------- */
-.compare {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
-  margin-bottom: 1rem;
-}
-.compare__head {
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink-soft);
-  margin-bottom: 0.5rem;
-}
-.compare__cells {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.compare__cell {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-.compare__label {
-  font-size: 0.78rem;
-  color: var(--ink-soft);
-}
-.compare__value {
-  font-size: 1.3rem;
-  font-weight: 700;
-  line-height: 1.15;
-}
-.compare__arrow {
-  font-size: 1.4rem;
-  color: var(--ink-soft);
-  line-height: 1;
-}
-.compare__cell--change {
-  margin-left: auto;
-  align-items: flex-end;
-  text-align: right;
-}
-.compare__value.is-up   { color: #16a34a; }
-.compare__value.is-down { color: var(--accent); }
-
 /* ---------- PSU expected grant ---------- */
 .psu {
   background: var(--card);
@@ -195,6 +108,43 @@ body {
   border-radius: 6px;
   padding: 0.15rem 0.5rem;
 }
+/* inline pinned → latest VWAP mean comparison */
+.psu__vwap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0 0.6rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.psu__vwap-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.psu__vwap-label {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+.psu__vwap-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.psu__vwap-arrow {
+  font-size: 1.4rem;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+.psu__vwap-cell--change {
+  margin-left: auto;
+  align-items: flex-end;
+  text-align: right;
+}
+.psu__vwap-value.is-up   { color: #16a34a; }
+.psu__vwap-value.is-down { color: var(--accent); }
 .psu__grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -275,12 +225,10 @@ body {
 
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
-  .stats { grid-template-columns: repeat(2, 1fr); }
   .topbar { flex-direction: column; align-items: flex-start; }
 }
 @media (max-width: 480px) {
-  .stats { grid-template-columns: 1fr; }
   .chart { height: 420px; }
-  .compare__cell--change { margin-left: 0; align-items: flex-start; text-align: left; }
+  .psu__vwap-cell--change { margin-left: 0; align-items: flex-start; text-align: left; }
   .psu__grid { grid-template-columns: 1fr; }
 }

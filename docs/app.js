@@ -82,11 +82,6 @@ function num(v) {
 const fmtKRW = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 const fmtVol = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 });
 
-function setStat(field, value, opts = {}) {
-  const el = document.querySelector(`.stat__value[data-field="${field}"], .stat__date[data-field="${field}"], .stat__meta[data-field="${field}"]`);
-  if (el) el.textContent = value ?? "";
-}
-
 /* ---------- data load + join ---------- */
 async function loadPrices() {
   const res = await fetch(DATA.prices, { cache: "no-store" });
@@ -135,32 +130,14 @@ async function loadData() {
   return { merged, psu };
 }
 
-/* ---------- stat cards ---------- */
+/* ---------- stat cards ----------
+ * The top-of-page stat cards were removed; this now only updates the header
+ * sub-text with the trading-day span and last close. Kept as its own function
+ * so the data flow stays clear.
+ */
 function renderStats(data) {
   if (!data.length) return;
   const last = data[data.length - 1];
-
-  // latest row that actually has a vwap entry (vwap may lag the latest price day)
-  let vrow = last;
-  for (let i = data.length - 1; i >= 0; i--) {
-    if (data[i].vwap_mean != null) { vrow = data[i]; break; }
-  }
-
-  setStat("close",  last.close != null ? "₩" + fmtKRW.format(last.close) : "—");
-  setStat("as_of",  last.date);
-
-  setStat("vwap_mean", vrow.vwap_mean != null ? "₩" + fmtKRW.format(vrow.vwap_mean) : "—");
-  setStat("mean_date", vrow.vwap_as_of ? `as of ${vrow.vwap_as_of}` : "—");
-
-  setStat("vwap_7d", vrow.vwap_7d != null ? "₩" + fmtKRW.format(vrow.vwap_7d) : "—");
-  setStat("days_7d", vrow.days_7d != null ? `${vrow.days_7d} trading days` : "—");
-
-  setStat("vwap_1m", vrow.vwap_1m != null ? "₩" + fmtKRW.format(vrow.vwap_1m) : "—");
-  setStat("days_1m", vrow.days_1m != null ? `${vrow.days_1m} trading days` : "—");
-
-  setStat("vwap_2m", vrow.vwap_2m != null ? "₩" + fmtKRW.format(vrow.vwap_2m) : "—");
-  setStat("days_2m", vrow.days_2m != null ? `${vrow.days_2m} trading days` : "—");
-
   const sub = document.getElementById("last-updated");
   sub.textContent = `${data.length} trading days · ${data[0].date} → ${last.date} · last close ₩${fmtKRW.format(last.close ?? 0)}`;
 }
