@@ -32,6 +32,21 @@ These are written (one row per trading day) to:
                  vwap_mean
 where vwap_mean is the arithmetic mean of the available VWAPs (only non-empty
 VWAPs are averaged; empty when all three are empty).
+
+After the VWAP CSV is updated the script also computes a PSU (Performance Share
+Unit) evaluation for every trading day that has a VWAP mean, comparing that
+day's VWAP mean against the VWAP mean of a pinned anchor date
+(PSU_PINNED_DATE = 2025-10-13) to get a percentage difference (diff_ratio). A
+tiered multiplier is derived from the ratio:
+    pct >= 100 -> x2.0 | >= 80 -> x1.7 | >= 60 -> x1.3 |
+    >= 40 -> x1.0 | >= 20 -> x0.5 | else x0.0
+and applied to a per-class stock base (cl1/cl2 = 200 shares, cl3/cl4 = 300
+shares), valued at the day's closing price. These are written (one row per
+trading day) to a separate file:
+    docs/<TICKER>_<MARKET>_psu.csv
+        columns: as_of, close, pinned_date, pinned_vwap_mean, vwap_mean,
+                 diff_ratio, multiplier, cl12_base, cl12_stocks, cl12_eval,
+                 cl34_base, cl34_stocks, cl34_eval
 """
 
 from __future__ import annotations
@@ -50,7 +65,7 @@ from typing import NoReturn
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-DOCS_DIR = os.path.join(ROOT, "docs")
+DOCS_DIR = os.path.join(ROOT, "data")
 
 MARKET_SUFFIX = {"kospi": ".KS", "kosdaq": ".KQ"}
 CSV_FIELDS = ["date", "close", "volume", "adjclose", "symbol", "market"]
@@ -279,6 +294,113 @@ def write_vwap_summaries(path: str, summaries: list[dict]) -> None:
             writer.writerow(existing[as_of])
 
 
+# ---------------------------------------------------------------------------
+# PSU (Performance Share Unit) evaluation
+#
+# Mirrors the logic in docs/app.js (renderPsu / psuMultiplier): the VWAP mean of
+# the latest trading day is compared against the VWAP mean of a pinned anchor
+# date (PSU_PINNED_DATE) to get a percentage difference (diff_ratio). A tiered
+# multiplier is derived from that ratio, then applied to a per-class stock base
+# (cl1/cl2 = 200 shares, cl3/cl4 = 300 shares) and valued at the day's closing
+# price. One row per trading day is written to a dedicated PSU CSV (separate from
+# the prices and VWAP CSVs), accumulated incrementally and deduplicated by
+# as_of, so the history of grant evaluations is preserved across runs.
+# ---------------------------------------------------------------------------
+PSU_PINNED_DATE = "2025-10-13"
+PSU_BASE = {"cl12": 200, "cl34": 300}
+PSU_FIELDS = [
+    "as_of", "close",
+    "pinned_date", "pinned_vwap_mean", "vwap_mean",
+    "diff_ratio", "multiplier",
+    "cl12_base", "cl12_stocks", "cl12_eval",
+    "cl34_base", "cl34_stocks", "cl34_eval",
+]
+
+
+def psu_multiplier(pct: float) -> float:
+    """Tiered PSU multiplier from the VWAP-mean difference ratio (percent)."""
+    if pct >= 100:
+        return 2.0
+    if pct >= 80:
+        return 1.7
+    if pct >= 60:
+        return 1.3
+    if pct >= 40:
+        return 1.0
+    if pct >= 20:
+        return 0.5
+    return 0.0
+
+
+def _fnum(v) -> float | None:
+    """Parse a CSV cell into float, or None when empty/invalid."""
+    if v == "" or v is None:
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def compute_psu_row(as_of: str, close: float, pinned_vwap: float, vwap_mean: float) -> dict:
+    """Build a single PSU evaluation row for one trading day."""
+    diff = (vwap_mean - pinned_vwap) / pinned_vwap * 100
+    mult = psu_multiplier(diff)
+    cl12_stocks = round(PSU_BASE["cl12"] * mult)
+    cl34_stocks = round(PSU_BASE["cl34"] * mult)
+    return {
+        "as_of": as_of,
+        "close": round(close, 2),
+        "pinned_date": PSU_PINNED_DATE,
+        "pinned_vwap_mean": round(pinned_vwap, 2),
+        "vwap_mean": round(vwap_mean, 2),
+        "diff_ratio": round(diff, 2),
+        "multiplier": mult,
+        "cl12_base": PSU_BASE["cl12"],
+        "cl12_stocks": cl12_stocks,
+        "cl12_eval": round(cl12_stocks * close, 2),
+        "cl34_base": PSU_BASE["cl34"],
+        "cl34_stocks": cl34_stocks,
+        "cl34_eval": round(cl34_stocks * close, 2),
+    }
+
+
+def load_vwap_index(path: str) -> dict[str, dict]:
+    """Read the VWAP CSV into {as_of: row} for PSU lookups."""
+    index: dict[str, dict] = {}
+    if not os.path.exists(path):
+        return index
+    with open(path, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            index[row["as_of"]] = row
+    return index
+
+
+def load_existing_psu_as_of(path: str) -> set[str]:
+    """Read just the set of as_of dates already present in the PSU CSV."""
+    if not os.path.exists(path):
+        return set()
+    with open(path, newline="", encoding="utf-8") as f:
+        return {row["as_of"] for row in csv.DictReader(f)}
+
+
+def write_psu_summaries(path: str, summaries: list[dict]) -> None:
+    """Merge PSU rows into the per-symbol PSU CSV, deduplicated by as_of."""
+    existing: dict[str, dict] = {}
+    if os.path.exists(path):
+        with open(path, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                existing[row["as_of"]] = row
+    for summary in summaries:
+        existing[summary["as_of"]] = summary
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=PSU_FIELDS)
+        writer.writeheader()
+        for as_of in sorted(existing):
+            writer.writerow(existing[as_of])
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ticker", required=True, help="Korean stock ticker, e.g. 005930 (Samsung Electronics)")
@@ -341,6 +463,56 @@ def main() -> None:
     else:
         print(f"No new VWAP rows to compute "
               f"({len(existing_as_of)} day(s) already present in {vwap_path})")
+
+    # PSU evaluation: difference ratio, tiered multiplier and grant evaluation
+    # for cl1/cl2 (base 200) and cl3/cl4 (base 300), comparing each trading
+    # day's VWAP mean against the pinned anchor date (PSU_PINNED_DATE) and
+    # valuing the granted shares at that day's close. One row per trading day
+    # is written to a dedicated PSU CSV (separate from the prices and VWAP
+    # CSVs), accumulated incrementally and deduplicated by as_of.
+    psu_path = os.path.join(args.docs_dir, f"{args.ticker}_{args.market}_psu.csv")
+    vwap_index = load_vwap_index(vwap_path)
+    pinned_row = vwap_index.get(PSU_PINNED_DATE)
+    pinned_vwap = _fnum(pinned_row["vwap_mean"]) if pinned_row else None
+
+    if pinned_vwap is None:
+        print(f"PSU skipped: pinned anchor {PSU_PINNED_DATE} has no VWAP mean "
+              f"in {vwap_path}")
+    else:
+        existing_psu_as_of = load_existing_psu_as_of(psu_path)
+        psu_summaries: list[dict] = []
+        for as_of in sorted(vwap_index):
+            if as_of in existing_psu_as_of:
+                continue
+            vwap_mean = _fnum(vwap_index[as_of]["vwap_mean"])
+            if vwap_mean is None:
+                continue
+            price_row = existing.get(as_of)
+            close = _fnum(price_row["close"]) if price_row else None
+            if close is None:
+                continue
+            psu_summaries.append(
+                compute_psu_row(as_of, close, pinned_vwap, vwap_mean)
+            )
+
+        if psu_summaries:
+            write_psu_summaries(psu_path, psu_summaries)
+            latest = psu_summaries[-1]
+            print(f"PSU evaluated for {len(psu_summaries)} new day(s) "
+                  f"({psu_summaries[0]['as_of']} .. {latest['as_of']}); latest "
+                  f"(vs pinned {PSU_PINNED_DATE} @ {latest['pinned_vwap_mean']}):")
+            print(f"  diff_ratio : {latest['diff_ratio']:>+.2f}%")
+            print(f"  multiplier : x{latest['multiplier']}")
+            print(f"  close      : {latest['close']}")
+            print(f"  cl1/cl2    : {latest['cl12_stocks']} stocks  "
+                  f"(eval {latest['cl12_eval']})")
+            print(f"  cl3/cl4    : {latest['cl34_stocks']} stocks  "
+                  f"(eval {latest['cl34_eval']})")
+            print(f"{psu_path}: PSU summary updated")
+        else:
+            print(f"No new PSU rows to compute "
+                  f"({len(existing_psu_as_of)} day(s) already present "
+                  f"in {psu_path})")
 
 
 if __name__ == "__main__":
