@@ -15,6 +15,9 @@ const DATA = {
   vwap:   "https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_vwap.csv",
 };
 
+// Reference date for the VWAP-mean comparison shown on the page.
+const PINNED_DATE = "2025-10-13";
+
 const COLORS = {
   volume: "#93a4c4",
   close:  "#111827",
@@ -146,6 +149,38 @@ function renderStats(data) {
 
   const sub = document.getElementById("last-updated");
   sub.textContent = `${data.length} trading days · ${data[0].date} → ${last.date} · last close ₩${fmtKRW.format(last.close ?? 0)}`;
+}
+
+/* ---------- VWAP mean comparison (pinned date vs latest) ---------- */
+function renderCompare(data) {
+  // latest row that actually has a vwap_mean entry
+  let latest = null;
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (data[i].vwap_mean != null) { latest = data[i]; break; }
+  }
+  const pinned = data.find(d => d.date === PINNED_DATE && d.vwap_mean != null) || null;
+
+  const elPinned  = document.querySelector('[data-field="cmp_pinned_mean"]');
+  const elDate    = document.querySelector('[data-field="cmp_latest_date"]');
+  const elLatest  = document.querySelector('[data-field="cmp_latest_mean"]');
+  const elChange  = document.querySelector('[data-field="cmp_change"]');
+
+  if (!latest || !pinned) {
+    if (elChange) elChange.textContent = "—";
+    return;
+  }
+
+  if (elPinned) elPinned.textContent = "₩" + fmtKRW.format(pinned.vwap_mean);
+  if (elDate)   elDate.textContent   = latest.date;
+  if (elLatest) elLatest.textContent = "₩" + fmtKRW.format(latest.vwap_mean);
+
+  const pct = (latest.vwap_mean - pinned.vwap_mean) / pinned.vwap_mean * 100;
+  const sign = pct >= 0 ? "+" : "";
+  if (elChange) {
+    elChange.textContent = sign + pct.toFixed(2) + "%";
+    elChange.classList.toggle("is-up", pct >= 0);
+    elChange.classList.toggle("is-down", pct < 0);
+  }
 }
 
 /* ---------- chart ---------- */
@@ -329,6 +364,7 @@ async function init() {
     const data = await loadData();
     if (!data.length) throw new Error("no rows returned");
     renderStats(data);
+    renderCompare(data);
     renderChart(data);
     status.textContent = "";
   } catch (err) {
