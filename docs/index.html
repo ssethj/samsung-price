@@ -4,23 +4,73 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Samsung Electronics (005930.KS) — Price &amp; VWAP Dashboard</title>
-  <meta name="description" content="Daily closing prices, trading volumes and trailing VWAPs for Samsung Electronics (KRX: 005930, KOSPI)." />
+  <meta name="description" content="Live daily closing prices, trading volumes and trailing VWAPs for Samsung Electronics (KRX: 005930, KOSPI). Auto-updated via GitHub Actions with Yahoo Finance data." />
+  <meta name="keywords" content="Samsung Electronics, 005930, KRX, KOSPI, stock price, VWAP, volume weighted average price, 삼성전자, 주가, Korea stock market" />
+  <meta name="author" content="tindone" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://tindone.github.io/samsung-price/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Samsung Electronics (005930.KS) — Price &amp; VWAP Dashboard" />
+  <meta property="og:description" content="Live daily closing prices, trading volumes and trailing VWAPs for Samsung Electronics (KRX: 005930, KOSPI). Auto-updated daily." />
+  <meta property="og:url" content="https://tindone.github.io/samsung-price/" />
+  <meta property="og:site_name" content="Samsung Price Dashboard" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Samsung Electronics (005930.KS) — Price &amp; VWAP Dashboard" />
+  <meta name="twitter:description" content="Live daily closing prices, trading volumes and trailing VWAPs for Samsung Electronics (KRX: 005930, KOSPI)." />
+
+  <!-- Structured Data (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Samsung Electronics Price & VWAP Dashboard",
+    "description": "Daily closing prices, trading volumes and trailing VWAPs for Samsung Electronics (KRX: 005930, KOSPI), auto-updated via GitHub Actions.",
+    "url": "https://tindone.github.io/samsung-price/",
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "tindone",
+      "url": "https://github.com/tindone"
+    },
+    "about": {
+      "@type": "Corporation",
+      "name": "Samsung Electronics Co., Ltd.",
+      "tickerSymbol": "005930",
+      "exchange": "KRX"
+    },
+    "dateModified": "2026-07-30"
+  }
+  </script>
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
+  <header class="topbar" role="banner">
     <div class="topbar__brand">
-      <h1>Samsung Electronics <span class="ticker">005930.KS</span></h1>
-      <p class="topbar__sub" id="last-updated">Loading market data…</p>
+      <h1>Samsung Electronics <span class="ticker" aria-label="Ticker symbol 005930.KS">005930.KS</span></h1>
+      <p class="topbar__sub" id="last-updated" aria-live="polite">Loading market data…</p>
     </div>
-    <a class="topbar__source" href="https://github.com/tindone/samsung-price" target="_blank" rel="noopener">Data source ↗</a>
+    <nav aria-label="External links">
+      <a class="topbar__source" href="https://github.com/tindone/samsung-price" target="_blank" rel="noopener" aria-label="View data source on GitHub">Data source ↗</a>
+    </nav>
   </header>
 
-  <main class="dashboard">
-    <section class="psu" aria-label="PSU expected grant">
+  <main class="dashboard" role="main">
+    <section class="psu" aria-labelledby="psu-heading">
       <div class="psu__head">
-        <span class="psu__title">PSU Expected Grant</span>
-        <span class="psu__badge">Diff <span data-field="psu_diff">—</span> · Multiplier <span data-field="psu_mult">—</span></span>
+        <h2 class="psu__title" id="psu-heading">PSU Expected Grant</h2>
+        <span class="psu__badge" aria-label="PSU difference and multiplier">Diff <span data-field="psu_diff">—</span> · Multiplier <span data-field="psu_mult">—</span></span>
       </div>
 
       <div class="psu__vwap">
@@ -56,17 +106,18 @@
       <p class="psu__note">Evaluation = expected stocks × latest closing price (₩<span data-field="psu_close">—</span>). Tiers: ×0.5 @≥+20%, ×1.0 @≥+40%, ×1.3 @≥+60%, ×1.7 @≥+80%, ×2.0 @≥+100%.</p>
     </section>
 
-    <section class="chart-card">
-      <div id="chart" class="chart" role="img" aria-label="Price, volume and VWAP chart"></div>
+    <section class="chart-card" aria-labelledby="chart-heading">
+      <h2 id="chart-heading" class="sr-only">Price, Volume &amp; VWAP Chart</h2>
+      <div id="chart" class="chart" role="img" aria-label="Interactive chart showing Samsung Electronics daily price, trading volume, and VWAP trends"></div>
       <p id="status" class="chart-card__status" role="status" aria-live="polite"></p>
     </section>
   </main>
 
-  <footer class="footer">
-    <span>Auto-updated daily via GitHub Actions · data from Yahoo Finance</span>
-    <a class="bmc" href="https://www.buymeacoffee.com/lungo" target="_blank" rel="noopener">
+  <footer class="footer" role="contentinfo">
+    <p>Auto-updated daily via GitHub Actions · data from Yahoo Finance</p>
+    <a class="bmc" href="https://www.buymeacoffee.com/lungo" target="_blank" rel="noopener" aria-label="Support this project - Buy me a coffee">
       <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-           alt="Buy me a coffee" height="36" loading="lazy" />
+           alt="Buy me a coffee" width="145" height="36" loading="lazy" />
     </a>
   </footer>
 
