@@ -16,9 +16,9 @@
  */
 
 const DATA = {
-  prices: "https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_prices.csv",
-  vwap:   "https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_vwap.csv",
-  psu:    "https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_psu.csv",
+  prices: "https://cdn.jsdelivr.net/gh/ssethj/samsung-price@main/data/005930_kospi_prices.csv",
+  vwap:   "https://cdn.jsdelivr.net/gh/ssethj/samsung-price@main/data/005930_kospi_vwap.csv",
+  psu:    "https://cdn.jsdelivr.net/gh/ssethj/samsung-price@main/data/005930_kospi_psu.csv",
 };
 
 // Reference date for the VWAP-mean comparison shown on the page.

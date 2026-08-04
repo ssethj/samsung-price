@@ -13,16 +13,16 @@ so you can fetch them directly without cloning the repo.
 
 One row per trading day. Columns: `date, close, volume, adjclose, symbol, market`.
 
-- Raw (GitHub): <https://github.com/tindone/samsung-price/blob/main/data/005930_kospi_prices.csv>
-- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_prices.csv>
+- Raw (GitHub): <https://github.com/ssethj/samsung-price/blob/main/data/005930_kospi_prices.csv>
+- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/ssethj/samsung-price@main/data/005930_kospi_prices.csv>
 
 ### VWAP — `data/005930_kospi_vwap.csv`
 
 Trailing calendar-window VWAPs computed for every trading day. Columns:
 `as_of, vwap_7d, days_7d, vwap_1m, days_1m, vwap_2m, days_2m, vwap_mean`.
 
-- Raw (GitHub): <https://github.com/tindone/samsung-price/blob/main/data/005930_kospi_vwap.csv>
-- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/tindone/samsung-price@main/data/005930_kospi_vwap.csv>
+- Raw (GitHub): <https://github.com/ssethj/samsung-price/blob/main/data/005930_kospi_vwap.csv>
+- jsDelivr CDN: <https://cdn.jsdelivr.net/gh/ssethj/samsung-price@main/data/005930_kospi_vwap.csv>
 
 > jsDelivr caches aggressively; point at a specific commit (`@<sha>` instead of
 > `@main`) if you need a pinned, instantly-refreshing snapshot.
