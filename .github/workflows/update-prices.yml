@@ -6,6 +6,9 @@ on:
   #schedule:
   #  - cron: '23 11 * * 1-5'
   workflow_dispatch:
+  repository_dispatch:
+    types:
+      - cloudflare-worker
 
 # The auto-commit step pushes back to the repo, so the default
 # GITHUB_TOKEN needs write access to contents.
