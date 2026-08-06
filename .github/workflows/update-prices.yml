@@ -3,8 +3,8 @@ name: Update Samsung prices
 # Runs every weekday at 8:23 PM KST (UTC+9) = 11:23 UTC, Mon–Fri.
 # Also runnable on demand from the Actions tab.
 on:
-  schedule:
-    - cron: '23 11 * * 1-5'
+  #schedule:
+  #  - cron: '23 11 * * 1-5'
   workflow_dispatch:
 
 # The auto-commit step pushes back to the repo, so the default
